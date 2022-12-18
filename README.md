@@ -1,0 +1,1 @@
+You are a bacteria with a special skill -- you can eat plastic. Save the oceans by eating all the micro and macroplastics!
