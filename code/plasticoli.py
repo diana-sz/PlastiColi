@@ -25,7 +25,7 @@ WIDTH, HEIGHT = 700, 500
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("PlastiColi")
 
-BACKGROUND = (6, 63, 120)
+BACKGROUND = (173, 234, 237)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BORDER = pygame.Rect(0, 0, WIDTH, HEIGHT//10)
@@ -64,6 +64,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(topleft=(0, BORDER.height))
         self.health = 100
         self.plastic_eaten = 0
+        self.plastic_left = 10e6
 
     def update(self, pressed_keys):
         if pressed_keys[K_UP] and self.rect.y - VEL > 0 + BORDER.height:
@@ -84,10 +85,24 @@ class Player(pygame.sprite.Sprite):
     def eat_plastic(self):
         self.plastic_eaten += 1
         self.add_health(1)
+        self.plastic_left -= 1
         
     def incorporate_plasmid(self):
         # random temporary advantage -- resistance to virus, double health, more plastic eaten...
         pass
+        
+    
+    
+class Population():
+    def __init__(self):
+        self.population = 1
+        self.maximum = 10e7
+        
+    def update_population():
+        
+        pass
+        
+        
         
 
 class Enemy(pygame.sprite.Sprite):
@@ -119,7 +134,7 @@ class Plastic(pygame.sprite.Sprite):
     def __init__(self):
         super(Plastic, self).__init__()
         self.surf = pygame.Surface((20, 10))
-        self.surf.fill((100, 150, 255))
+        self.surf.fill((71, 125, 88))
         self.rect = self.surf.get_rect(
             topleft=(
                 random.randint(WIDTH + 20, WIDTH + 100),
@@ -135,10 +150,15 @@ class Plastic(pygame.sprite.Sprite):
 
 
 class Plasmid(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, filename='plasmid_detailed_1.png'):
         super(Plasmid, self).__init__()
-        self.surf = pygame.Surface((20, 20))
-        self.surf.fill((200, 150, 200))
+        # self.surf = pygame.Surface((20, 20))
+        # self.surf.fill((200, 150, 200))
+        
+        self.surf = pygame.image.load(
+            os.path.join('media', filename))
+        self.surf = pygame.transform.scale(self.surf, 
+                                           (VIRUS_WIDTH, VIRUS_HEIGTH))
         self.rect = self.surf.get_rect(
             topleft=(
                 random.randint(WIDTH + 20, WIDTH + 100),
@@ -151,6 +171,13 @@ class Plasmid(pygame.sprite.Sprite):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
+            
+            
+class Plasmid_1(Plasmid):
+    def __init__(self):
+        super(Plasmid_1, self).__init('plasmid_detailed_1.png')
+        
+
 
 
 
@@ -160,6 +187,9 @@ def draw_window(player, all_sprites):
 
     health_text = HEALTH_FONT.render(f"Health: {player.health}", 1, BLACK)
     WINDOW.blit(health_text, (WIDTH-health_text.get_width()-10, 0))
+
+    plastic_text = HEALTH_FONT.render(f"Plastic left: {player.plastic_left:.0f}", 1, BLACK)
+    WINDOW.blit(plastic_text, (WIDTH-plastic_text.get_width()-health_text.get_width()-30, 0))
 
     
     # Draw all sprites
@@ -211,6 +241,14 @@ def bacteria_is_dead(text):
     pygame.time.delay(3000)
 
 
+def no_plastic_left(text):
+    draw_text = DEAD_FONT.render(text, 1, BLACK)
+    WINDOW.blit(draw_text, (WIDTH/2 - draw_text.get_width()/2, 
+                            HEIGHT/2 - draw_text.get_height()/2))
+    pygame.display.update()
+    pygame.time.delay(3000)
+    
+
 def main():
     player = Player()
     enemies = pygame.sprite.Group()
@@ -256,6 +294,11 @@ def main():
         if player.health <= 0:
             dead_text = "You are dead"
             bacteria_is_dead(dead_text)
+            break
+        
+        if player.plastic_left <= 0:
+            win_text = "The ocean is clean!"
+            no_plastic_left(win_text)
             break
 
 
