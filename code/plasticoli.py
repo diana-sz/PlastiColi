@@ -8,8 +8,12 @@ Created on Tue Dec  6 21:29:42 2022
 import os
 import pygame
 import random
+import math
 from itertools import compress
 pygame.font.init()
+
+folder = os.path.dirname(os.path.abspath(__file__))
+os.chdir(folder)
 
 from pygame.locals import (
     K_UP,
@@ -21,7 +25,7 @@ from pygame.locals import (
     QUIT,
 )
 
-WIDTH, HEIGHT = 700, 500
+WIDTH, HEIGHT = 1000, 700
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("PlastiColi")
 
@@ -30,7 +34,9 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BORDER = pygame.Rect(0, 0, WIDTH, HEIGHT//10)
 
-TOTAL_PLASTIC = 1000000
+TOTAL_PLASTIC = 10000000
+MAX_HEALTH = 100
+MAX_POPULATION = 100000
 FPS = 60  # frames per second for updating of screen
 VEL = 4  # velocity
 VIRUS_VEL = 6
@@ -62,7 +68,7 @@ class Player(pygame.sprite.Sprite):
         self.surf = pygame.transform.scale(self.surf, 
                                            (ECOLI_WIDTH, ECOLI_HEIGTH))
         self.rect = self.surf.get_rect(topleft=(0, BORDER.height))
-        self.health = 100
+        self.health = MAX_HEALTH
         self.plastic_eaten = 0
         self.population = 1
 
@@ -80,16 +86,20 @@ class Player(pygame.sprite.Sprite):
         self.health -= 10
         
     def add_health(self, value):
-        self.health += value
+        if self.health < MAX_HEALTH:
+            self.health += value
         
     def eat_plastic(self):
-        self.plastic_eaten += 1
+        self.plastic_eaten += 1 * self.population
         self.add_health(1)
         
     def incorporate_plasmid(self):
         # random temporary advantage -- resistance to virus, double health, more plastic eaten...
         pass
         
+    def update_population(self):
+        self.population = 1 + MAX_POPULATION / (1 + math.exp(-0.000002*(self.plastic_eaten - 1150000))) - 9112.2961
+        #self.population *= 2
     
     
 class Population():
@@ -97,9 +107,8 @@ class Population():
         self.population = 1
         self.maximum = 10e7
         
-    def update_population():
-        
-        pass
+
+
         
         
         
@@ -174,7 +183,7 @@ class Plasmid(pygame.sprite.Sprite):
             
 class Plasmid_1(Plasmid):
     def __init__(self):
-        super(Plasmid_1, self).__init('plasmid_detailed_1.png')
+        super(Plasmid_1, self).__init__('plasmid_detailed_1.png')
         
 
 
@@ -182,16 +191,16 @@ class Plasmid_1(Plasmid):
 
 def draw_window(player, all_sprites):
     WINDOW.fill(BACKGROUND)
-    pygame.draw.rect(WINDOW, WHITE, BORDER)
+    pygame.draw.rect(WINDOW, BLACK, BORDER)
 
-    health_text = STATUS_FONT.render(f"Health: {player.health}", 1, BLACK)
+    health_text = STATUS_FONT.render(f"Health: {player.health}", 1, WHITE)
     WINDOW.blit(health_text, (WIDTH-health_text.get_width()-10, 0))
 
     plastic_left = TOTAL_PLASTIC - player.plastic_eaten
-    plastic_text = STATUS_FONT.render(f"Plastic left: {plastic_left:.0f}", 1, BLACK)
+    plastic_text = STATUS_FONT.render(f"Plastic left: {plastic_left:.0f}", 1, WHITE)
     WINDOW.blit(plastic_text, (WIDTH//2-plastic_text.get_width()//2, 0))
 
-    population_text = STATUS_FONT.render(f"Population: {player.population:.0f}", 1, BLACK)
+    population_text = STATUS_FONT.render(f"Population: {player.population:.0f}", 1, WHITE)
     WINDOW.blit(population_text, (0, 0))
     
     # Draw all sprites
@@ -289,7 +298,7 @@ def main():
                 all_sprites.add(new_plastic)
 
             if event.type == ADDPLASMID:
-                new_plasmid = Plasmid()
+                new_plasmid = Plasmid_1()
                 plasmids.add(new_plasmid)
                 all_sprites.add(new_plasmid)
         
@@ -311,6 +320,9 @@ def main():
         plastics.update()
         plasmids.update()
         
+        player.update_population()
+
+        
         for enemy in enemies:
             if pygame.sprite.collide_rect(player, enemy):
                 player.subtract_health()
@@ -326,9 +338,8 @@ def main():
                 player.incorporate_plasmid()
                 plasmid.kill()
 
-        draw_window(player, all_sprites)
-    
 
+        draw_window(player, all_sprites)
 
     main()
 
