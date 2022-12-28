@@ -30,7 +30,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BORDER = pygame.Rect(0, 0, WIDTH, HEIGHT//10)
 
-
+TOTAL_PLASTIC = 1000000
 FPS = 60  # frames per second for updating of screen
 VEL = 4  # velocity
 VIRUS_VEL = 6
@@ -39,7 +39,7 @@ PLASMID_VEL = 1
 ECOLI_WIDTH, ECOLI_HEIGTH = 120, 50
 VIRUS_WIDTH, VIRUS_HEIGTH = 35, 35
 
-HEALTH_FONT = pygame.font.SysFont('arial', 40)
+STATUS_FONT = pygame.font.SysFont('arial', 35)
 DEAD_FONT = pygame.font.SysFont('arial', 100)
 
 # Define events
@@ -64,7 +64,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(topleft=(0, BORDER.height))
         self.health = 100
         self.plastic_eaten = 0
-        self.plastic_left = 10e6
+        self.population = 1
 
     def update(self, pressed_keys):
         if pressed_keys[K_UP] and self.rect.y - VEL > 0 + BORDER.height:
@@ -85,7 +85,6 @@ class Player(pygame.sprite.Sprite):
     def eat_plastic(self):
         self.plastic_eaten += 1
         self.add_health(1)
-        self.plastic_left -= 1
         
     def incorporate_plasmid(self):
         # random temporary advantage -- resistance to virus, double health, more plastic eaten...
@@ -185,12 +184,15 @@ def draw_window(player, all_sprites):
     WINDOW.fill(BACKGROUND)
     pygame.draw.rect(WINDOW, WHITE, BORDER)
 
-    health_text = HEALTH_FONT.render(f"Health: {player.health}", 1, BLACK)
+    health_text = STATUS_FONT.render(f"Health: {player.health}", 1, BLACK)
     WINDOW.blit(health_text, (WIDTH-health_text.get_width()-10, 0))
 
-    plastic_text = HEALTH_FONT.render(f"Plastic left: {player.plastic_left:.0f}", 1, BLACK)
-    WINDOW.blit(plastic_text, (WIDTH-plastic_text.get_width()-health_text.get_width()-30, 0))
+    plastic_left = TOTAL_PLASTIC - player.plastic_eaten
+    plastic_text = STATUS_FONT.render(f"Plastic left: {plastic_left:.0f}", 1, BLACK)
+    WINDOW.blit(plastic_text, (WIDTH//2-plastic_text.get_width()//2, 0))
 
+    population_text = STATUS_FONT.render(f"Population: {player.population:.0f}", 1, BLACK)
+    WINDOW.blit(population_text, (0, 0))
     
     # Draw all sprites
     for entity in all_sprites:
@@ -296,7 +298,7 @@ def main():
             bacteria_is_dead(dead_text)
             break
         
-        if player.plastic_left <= 0:
+        if TOTAL_PLASTIC - player.plastic_eaten <= 0:
             win_text = "The ocean is clean!"
             no_plastic_left(win_text)
             break
